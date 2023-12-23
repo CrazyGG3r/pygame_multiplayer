@@ -15,3 +15,5 @@ try:
     logging.info("Successfully connected to the server")
 except socket.error as e:
     logging.error(f"Could not connect to the server: {e}")
+while True:
+    pass

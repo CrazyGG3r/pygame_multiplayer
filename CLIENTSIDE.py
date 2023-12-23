@@ -16,17 +16,13 @@ pygame.init()
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s:%(message)s')
 #server details
 client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-ip = '26.137.33.171'
+ip = '26.1.98.217'
 port = 5555
-
 try:
     client.connect((ip,port))
     logging.info("Successfully connected to the server")
 except socket.error as e:
     logging.error(f"Could not connect to the server: {e}")
-    while socket.error:
-        logging.info("Reconnecting...")
-        client.connect((ip,port))
 
 
 radius = 20
@@ -63,7 +59,7 @@ def listenserver(sock, screen):
 
      except Exception as e:
          logging.error("An error occurred: %s", e)
-         
+         break
 
 
 # Assuming 'client' is your connected socket object
@@ -72,7 +68,7 @@ thread.start()
 
 
 # Create a Ball instance
-pname = 'SUIIIIIIIIII'
+pname = 'seeweiwueiwuie'
 color = (r.randint(100, 255), r.randint(100, 255), r.randint(100, 255))
 ball = Ball((width // 2, height // 2),20, 5, pname, color)
 clock = pygame.time.Clock()
