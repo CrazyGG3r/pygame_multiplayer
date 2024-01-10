@@ -16,7 +16,7 @@ pygame.init()
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s:%(message)s')
 #server details
 client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-ip = '26.1.98.217'
+ip = 'localhost'
 port = 5555
 
 try:
@@ -72,7 +72,7 @@ thread.start()
 
 
 # Create a Ball instance
-pname = 'Faiq Very Pro'
+pname = 'Player 4'
 color = (r.randint(100, 255), r.randint(100, 255), r.randint(100, 255))
 ball = Ball((width // 2, height // 2),20, 5, pname, color)
 clock = pygame.time.Clock()

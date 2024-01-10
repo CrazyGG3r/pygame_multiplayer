@@ -7,7 +7,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s:%(mess
 
 # Server setup
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-ip = '26.1.98.217'
+ip = '0.0.0.0'
 port = 5555
 server.bind((ip, 5555))
 server.listen()
@@ -50,16 +50,16 @@ def client_thread(conn, addr, player_number):
                     
         except json.JSONDecodeError as e:
             logging.error("JSON Decode error for player {}: {}".format(player_number, e))
-            break
+            
         except Exception as e:
             logging.error("Error with player {}: {}".format(player_number, e), exc_info=True)
-            break
+            
         except Exception as e:
             logging.error("Error with player {}: {}".format(player_number, e), exc_info=True)
             conn.close()
             if player_number in positions:
                 del positions[player_number]
-            break
+      
 
 while True:
     conn, addr = server.accept()
