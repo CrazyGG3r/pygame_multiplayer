@@ -1,9 +1,12 @@
-
+import random as r
 from math import atan2, degrees
+
 import pygame
 import socket
 import logging
 import json
+
+
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s:%(message)s')
 pygame.init()
 WIDTH,HEIGHT = 800,600
@@ -102,11 +105,7 @@ class bullet:
         rotated_sprite = pygame.transform.rotate(self.sprite, -angle)  # Negative angle for correct rotation direction
         new_rect = rotated_sprite.get_rect(center=self.currentvec)
         screen.blit(rotated_sprite, new_rect.topleft)
-        # img = pygame.Surface((self.w,self.h))
-        # img.fill(self.colorb)
-        # imgnew = pygame.transform.rotate(img,angle)
-        # screen.blit(imgnew,self.currentvec)
-        #pygame.draw.circle(screen,self.colorb,self.currentvec,self.size)
+        
     
     def shot(self,charx,chary,mousex,mousey):
         self.x  = charx
@@ -120,8 +119,7 @@ class bullet:
         self.unitvector = ((self.destvector[0] - self.currentvec[0])/self.duration,(self.destvector[1] - self.currentvec[1])/self.duration)
         self.shooting = True
         logging.info("Bullet Shot. Unit Vector created")
-
-        
+      
     def move(self):
         self.tick+=1
         if self.tick == self.duration:
@@ -131,11 +129,7 @@ class bullet:
                 self.shooting = False
             else:
                 self.currentvec = (float(self.currentvec[0]+ self.unitvector[0]),float(self.currentvec[1]+self.unitvector[1]))
-
-            
-            
-       
-            
+        
 class gun:
     def __init__(self,ammo = 1000,cooldown = 30):
         self.ammo = ammo
@@ -153,14 +147,30 @@ class pistol(gun):
             b.shot(px,py,mx,my)
             self.ammo -=1 
             return b
-    
+
+class miniGun(gun):
+    def __init__(self,ammo = 1500, cd = 5):
+        super().__init__(ammo,cd)
+        
+    def shoot(self,px,py,mx,my):
+        accuracy = 1
+        mx = mx + r.randint(accuracy-100,100-accuracy)
+        my = my + r.randint(accuracy-100,100-accuracy)
+        if self.ammo < 1:
+            return
+        else:
+            b = bullet()
+            b.shot(px,py,mx,my)
+            self.ammo -=1 
+            return b
+        
 class person(Ball):#is a ball for now
-    def __init__(self,coords, radius, speed, name, color,ammo,health,lives):
+    def __init__(self,coords, radius, speed, name, color ,ammo ,health,lives):
         super().__init__(coords, radius, speed, name, color)
         self.maxhp = health
         self.currenthp = health
         self.lives = lives
-        self.gun = pistol()
+        self.gun = miniGun()
         self.bullets = []
         self.prev = 0
     def draw(self, screen):
@@ -206,6 +216,69 @@ class person(Ball):#is a ball for now
             else:
                 logging.info("Totalbullets: shot" + str(len(self.bullets)))
                 return  
-            
-        
+
+
+
+         
+class enemy(Ball):#is a ball for now
+    def __init__(self,coords, radius, speed, name, color ,health):
+        super().__init__(coords, radius, speed, name, color)
+        self.maxhp = health
+        self.currenthp = health
+        self.x = coords[0]
+        self.y =coords[1]
+        self.startvec = (self.x,self.y)
+        self.cx = self.x
+        self.cy = self.y
+        self.currentvec = (self.cx,self.cy)
+        self.xd = 0
+        self.yd = 0
+        self.destvec = (self.xd,self.yd)
+    def draw(self, screen):
+        pygame.draw.circle(screen,self.color,(self.cx,self.cy),self.radius)
+        screen.blit(self.name,((self.cx-self.radius),(self.cy + self.radius +10)))
+        barwidth = 40
+        barheight = 6
+        healthpercent = self.currenthp/self.maxhp
+        reed = 0
+        green = 255
+        if healthpercent < 0.4:
+            reed = min(((reed + 5),255))
+            green = max(((green - 5),0))
+        else:
+            green = 255
+            reed = 0
+        barcolor = (reed,green,0)
+        currentfullhealthbarwidth =  healthpercent* barwidth
+        o = 10
+        currentfullhealthbarheight = barheight - 2
+        bgrect = pygame.Rect((self.cx - self.radius),(self.cy-(self.radius + o+1)),barwidth,barheight)
+        pygame.draw.rect(screen,(230,230,230),bgrect)      
+        currbgrect = pygame.Rect((self.cx - self.radius),(self.cy-(self.radius + o)),currentfullhealthbarwidth,currentfullhealthbarheight)
+        pygame.draw.rect(screen,barcolor,currbgrect)
     
+    def move1(self,screen,px,py):
+        self.destvec = (px,py)
+        if self.cx < px:
+            self.cx += self.speed
+        if self.cy < py:
+            self.cy += self.speed
+        if self.cx > px:
+            self.cx -= self.speed
+        if self.cy > py:
+            self.cy -=self.speed
+            
+class spawner:
+    def __init__(self,screen):
+        self.maxx = screen.get_width()
+        self.maxy = screen.get_height()
+        self.speed = 60
+        
+    def spawn(self):
+        ax = r.randint(-50,self.maxx + 50)
+        ay = r.randint(-50,self.maxy + 50)
+        ra = 15
+        col = (r.randint(0,255),r.randint(100,150),r.randint(0,100))
+        en = enemy((ax,ay),ra,1,"bob",col,100)
+        return en
+        
