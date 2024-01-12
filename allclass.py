@@ -1,8 +1,5 @@
 
-from quopri import decodestring
-from re import X
-from telnetlib import XASCII
-from turtle import speed
+from math import atan2, degrees
 import pygame
 import socket
 import logging
@@ -23,30 +20,34 @@ class Ball:
         self.color = tuple(color)
     def bname(self):
        self.name = self.fnt.render(self.tname, True, (255, 255, 255))
+       
     def move(self,event,screen,client = None):
          if event == pygame.K_RIGHT:
               if screen.get_width()> self.x:
                 self.x +=self.speed
               else: 
-                self.x = screen.get_width()
+                self.x = screen.get_width() - self.speed
                 
          if event == pygame.K_LEFT:
               if 0 < self.x:
                 self.x -=self.speed
               else: 
-                self.x = 0
+                self.x = self.speed
                 
          if event == pygame.K_UP:
              if 0 < self.y:
                  self.y -= self.speed
              else :
-                 self.y = 0 
+                 self.y = self.speed
                  
          if event== pygame.K_DOWN:
              if screen.get_height() >  self.y:
                 self.y += self.speed
              else: 
-                self.y = screen.get_height()
+                self.y = screen.get_height() - self.speed
+                
+
+
          if client:
             ball_data = {
                 'x': self.x,
@@ -74,14 +75,16 @@ class Ball:
        self.color = data['color']
     def to_dict(self):
         return {'x': self.x, 'y': self.y, 'radius': self.radius}
+    
 class bullet:
-    def __init__(self,color = (255,255,255),x = 0,y = 0, Duration = 3, size = 5):
+    def __init__(self,color = (255,255,255),x = 0,y = 0, Duration = 1, size = 5):
+        self.w,self.h = 10,5
         self.x = x
         self.y = y
         self.cx = self.x
         self.cy = self.y
         self.size = size                                        
-        self.color = color
+        self.colorb = color
         self.shooting = False
         self.duration = Duration * 60  #duration defines speed
         self.speed = None #the unitvector.
@@ -90,9 +93,21 @@ class bullet:
         self.destvector = (0,0)
         self.unitvector = (0,0)# speed
         self.tick = 0
-        #------ grad
+        #display
+        self.sprite = pygame.image.load("b1.png")
         
-  
+    def draw(self,screen):
+        
+        angle = degrees(atan2(self.unitvector[1],self.unitvector[0]))
+        rotated_sprite = pygame.transform.rotate(self.sprite, -angle)  # Negative angle for correct rotation direction
+        new_rect = rotated_sprite.get_rect(center=self.currentvec)
+        screen.blit(rotated_sprite, new_rect.topleft)
+        # img = pygame.Surface((self.w,self.h))
+        # img.fill(self.colorb)
+        # imgnew = pygame.transform.rotate(img,angle)
+        # screen.blit(imgnew,self.currentvec)
+        #pygame.draw.circle(screen,self.colorb,self.currentvec,self.size)
+    
     def shot(self,charx,chary,mousex,mousey):
         self.x  = charx
         self.y  = chary
@@ -106,8 +121,6 @@ class bullet:
         self.shooting = True
         logging.info("Bullet Shot. Unit Vector created")
 
-    def draw(self,screen):
-        pygame.draw.circle(screen,self.color,self.currentvec,self.size)
         
     def move(self):
         self.tick+=1
@@ -124,19 +137,32 @@ class bullet:
        
             
 class gun:
-    def __init__(self,ammo = 100,cooldown = 1):
+    def __init__(self,ammo = 1000,cooldown = 30):
         self.ammo = ammo
         self.guncooldown = cooldown 
         
-class person(Ball,gun):#is a ball for now
+class pistol(gun):
+    def __init__(self,ammo = 1500, cd = 50):
+        super().__init__(ammo,cd)
+        
+    def shoot(self,px,py,mx,my):
+        if self.ammo < 1:
+            return
+        else:
+            b = bullet()
+            b.shot(px,py,mx,my)
+            self.ammo -=1 
+            return b
+    
+class person(Ball):#is a ball for now
     def __init__(self,coords, radius, speed, name, color,ammo,health,lives):
         super().__init__(coords, radius, speed, name, color)
-        gun.__init__(self)
         self.maxhp = health
         self.currenthp = health
         self.lives = lives
-        
-        
+        self.gun = pistol()
+        self.bullets = []
+        self.prev = 0
     def draw(self, screen):
         pygame.draw.circle(screen,self.color,(self.x,self.y),self.radius)
         screen.blit(self.name,((self.x-self.radius),(self.y + self.radius +10)))
@@ -160,7 +186,26 @@ class person(Ball,gun):#is a ball for now
         currbgrect = pygame.Rect((self.x - self.radius),(self.y-(self.radius + o)),currentfullhealthbarwidth,currentfullhealthbarheight)
         pygame.draw.rect(screen,barcolor,currbgrect)
     
-    def shoot(self,mx,my):
-        b = bullet()
-        b.shot(self.x,self.y,mx,my)
-        return bullet
+    def decision(self,key,screen,ti):
+        
+        if key == pygame.K_SPACE and (ti - self.prev)>= self.gun.guncooldown:
+            self.prev = ti
+            logging.info("Ammo = "+str(self.gun.ammo))
+            self.trigger()
+      
+        else:
+            self.move(key,screen)
+
+    def trigger(self):
+            m = pygame.mouse.get_pos()
+            if self.gun.ammo >0:
+                logging.info("One Bullet Created")
+                bull = self.gun.shoot(self.x,self.y,m[0],m[1])
+                self.bullets.append(bull)
+                logging.info("Totalbullets: " + str(len(self.bullets)))
+            else:
+                logging.info("Totalbullets: shot" + str(len(self.bullets)))
+                return  
+            
+        
+    

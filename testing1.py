@@ -9,7 +9,7 @@ width,height = 1280,720
 pygame.mouse.set_visible(True)
 screen = pygame.display.set_mode((width, height))
 #col = (r.randint(100,255),r.randint(100,255),r.randint(100,255))
-col = (100,100,0)
+col = (100,255,0)
 p1 = person((width//2,height//2),20,5,'test',col,100,100,5)
 
 bg = (0,0,0)
@@ -21,6 +21,7 @@ bullets= []
 btick = 0
 fps = 60
 ti =  0
+players = [p1]
 while True:
     screen.fill(bg)
     clock.tick(fps)
@@ -30,34 +31,26 @@ while True:
             pygame.quit()
             running = False
         if event.type == pygame.KEYDOWN:
-            keys_pressed.add(event.key) 
-            if event.key == pygame.K_SPACE and (btick % fps == p1.guncooldown):
-                btick = 0 
-                m = pygame.mouse.get_pos()
-                new_bullet = bullet(p1.x, p1.y)
-                new_bullet.shot(p1.x,p1.y,m[0],m[1],)
-                bullets.append(new_bullet)        
+            keys_pressed.add(event.key)
         if event.type == pygame.KEYUP:
            keys_pressed.discard(event.key)
-    for a in bullets:
-        if a.shooting == False:
-            bullets.remove(a)
-    for a in bullets:
-        if a.shooting == False:
-            bullets.remove(a)
-            logging.info("Bullet removed")
-            continue
-        a.move()
-        a.draw(screen)
-    p1.draw(screen)
-    btick +=  1
+           
     for a in keys_pressed:
-        p1.move(a,screen)
-        if a == pygame.K_SPACE and (btick % fps == p1.guncooldown):
-            btick =0 
-            m = pygame.mouse.get_pos()
-            new_bullet = bullet(p1.x, p1.y)
-            new_bullet.shot(p1.x,p1.y,m[0],m[1],)
-            bullets.append(new_bullet)
-            print(len(bullets))
+        for p in players:
+            p.decision(a,screen,ti)
+        
+    for p in players:
+        
+        
+        if p.bullets:
+            for b in p.bullets:
+                if b == None:
+                    continue
+                if b.shooting == False:
+                    p.bullets.remove(b)
+                else:
+                    
+                    b.move()
+                    b.draw(screen)
+        p.draw(screen)           
     pygame.display.flip()
