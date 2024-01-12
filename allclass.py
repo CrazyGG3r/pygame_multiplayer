@@ -1,4 +1,5 @@
 
+from quopri import decodestring
 from re import X
 from telnetlib import XASCII
 from turtle import speed
@@ -74,20 +75,24 @@ class Ball:
     def to_dict(self):
         return {'x': self.x, 'y': self.y, 'radius': self.radius}
 class bullet:
-    def __init__(self,color = (255,255,0),x = 0,y = 0, Duration = 10, speed = 1,size = 5):
+    def __init__(self,color = (255,255,255),x = 0,y = 0, Duration = 3, size = 5):
         self.x = x
         self.y = y
-        self.xd = None #destination x
-        self.yd = None #destination y
-        self.speed = speed
-        self.size = size
+        self.cx = self.x
+        self.cy = self.y
+        self.size = size                                        
         self.color = color
         self.shooting = False
-        logging.info("Bullet created")
-        #self.duration = Duration
-        #self.currdur = 0
+        self.duration = Duration * 60  #duration defines speed
+        self.speed = None #the unitvector.
+        self.startvec = (self.x,self.y)
+        self.currentvec = (self.cx,self.cy)
+        self.destvector = (0,0)
+        self.unitvector = (0,0)# speed
+        self.tick = 0
+        #------ grad
         
-        
+  
     def shot(self,charx,chary,mousex,mousey):
         self.x  = charx
         self.y  = chary
@@ -95,41 +100,33 @@ class bullet:
         self.cy = chary
         self.xd = mousex
         self.yd = mousey
+        self.currentvec = (self.cx,self.cy)
+        self.destvector = (float(self.xd),float(self.yd))
+        self.unitvector = ((self.destvector[0] - self.currentvec[0])/self.duration,(self.destvector[1] - self.currentvec[1])/self.duration)
         self.shooting = True
-      
+        logging.info("Bullet Shot. Unit Vector created")
 
     def draw(self,screen):
-        pygame.draw.circle(screen,self.color,(self.cx,self.cy),self.size)
+        pygame.draw.circle(screen,self.color,self.currentvec,self.size)
         
     def move(self):
-       
+        self.tick+=1
+        if self.tick == self.duration:
+            self.shooting = False
         if self.shooting == True:
-            dx = self.xd - self.x
-            dy = self.yd - self.y
-            if dx == 0: 
-                grad = float('inf') 
+            if self.currentvec == self.destvector:
+                self.shooting = False
             else:
-                grad = dy / dx
+                self.currentvec = (float(self.currentvec[0]+ self.unitvector[0]),float(self.currentvec[1]+self.unitvector[1]))
 
-            step_x = self.speed if dx > 0 else -self.speed
-            step_y = step_x * grad
-
-            if (step_x > 0 and self.cx < self.xd) or (step_x < 0 and self.cx > self.xd):
-                self.cx += step_x
-            if (step_y > 0 and self.cy < self.yd) or (step_y < 0 and self.cy > self.yd):
-                self.cy += step_y
-
-            if (step_x > 0 and self.cx >= self.xd) or (step_x < 0 and self.cx <= self.xd):
-                self.cx = self.xd
-                self.shooting = False
-            if (step_y > 0 and self.cy >= self.yd) or (step_y < 0 and self.cy <= self.yd):
-                self.cy = self.yd
-                self.shooting = False
+            
+            
+       
             
 class gun:
     def __init__(self,ammo = 100,cooldown = 1):
         self.ammo = ammo
-        self.guncooldown = cooldown
+        self.guncooldown = cooldown 
         
 class person(Ball,gun):#is a ball for now
     def __init__(self,coords, radius, speed, name, color,ammo,health,lives):
@@ -164,9 +161,6 @@ class person(Ball,gun):#is a ball for now
         pygame.draw.rect(screen,barcolor,currbgrect)
     
     def shoot(self,mx,my):
-        
-        
         b = bullet()
         b.shot(self.x,self.y,mx,my)
         return bullet
-        
